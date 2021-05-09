@@ -39,7 +39,7 @@ All Features are used. The Dataset is not enhanced with additional Data. The Sex
 
 I have uploaded the Data to my Workspace.
 
-![Dataset](images\Dataset.png)
+![Dataset](images/Dataset.png)
 
 In My HyperDrive ``train.py`` -Script the dataset is directly downloaded from my github.
 
@@ -66,7 +66,7 @@ I have used an experiment with a timeount after 40 minutes, a *normalized_mean_a
 
 While running, you can inspect the details of your run on in the RunDetails cell. 
 
-![RunDetails](images\RunWidget.png)
+![RunDetails](images/RunWidget.png)
 
 Afterwards you can inspect the best Model. In my case it was a VotingClassifier based upon several Algorithm. Each Algorithm was weighted to adjust its impact on the VotingClassifier: 
 
