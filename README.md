@@ -5,7 +5,7 @@ Date: 09.05.2021 <br>
 
 ## Introduction 
 
-This is my Capstone Project for the Udacity Machine-Learning-Engineer for Azure ND. In this Poject, i am going to compete a Machine-Learning Model created via HyperDrive to a Model conducted with Azure AutoML. I have choosen the [Abalone-Dataset](http://archive.ics.uci.edu/ml/datasets/Abalone) from UCI ML Repository. The AutoML approach had the best result and thus this Model was deployed. Deplyoment and Testing of the API as well as some additional information can be seen on my [screencast](https://youtu.be/dIHwq81iypg).
+This is my Capstone Project for the Udacity Machine-Learning-Engineer for Azure ND. In this Poject, i am going to compete a Machine-Learning Model created via HyperDrive to a Model conducted with Azure AutoML. I have choosen the [Abalone-Dataset](http://archive.ics.uci.edu/ml/datasets/Abalone) from UCI ML Repository. The AutoML approach had the best result and thus this Model was deployed. Deplyoment and Testing of the API as well as some additional information can be seen on my [screencast](https://youtu.be/dmvLlk5IiV0).
 
 ## Project Set Up 
 
