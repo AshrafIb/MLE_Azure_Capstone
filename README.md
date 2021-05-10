@@ -37,13 +37,34 @@ The Label-Column - **Rings**, as a count of visible rings - can be used to deter
 
 All Features are used. The Dataset is not enhanced with additional Data. The Sex-feature is on-hot-encoded and all continous Variables are standardized. 
 
-I have uploaded the Data to my Workspace.
+I have uploaded the Data to my Workspace using the GUI of Azure ML Studio and named the Dataset *abalone*.
 
 ![Dataset](images\Dataset.png)
+
+Then it is consumeable in AzureSDK by using: 
+
+```python
+from azureml.core import Workspace, Dataset
+
+subscription_id = 'YOUR SUBSCRIPTION'
+resource_group = 'YOUR RG'
+workspace_name = 'YOUR WS'
+
+workspace = Workspace(subscription_id, resource_group, workspace_name)
+
+dataset = Dataset.get_by_name(workspace, name='abalone')
+dataset.to_pandas_dataframe()
+```
+
+
 
 In My HyperDrive ``train.py`` -Script the dataset is directly downloaded from my github.
 
 ## Automated ML
+
+The Abalone Dataset is treated as classification as well as a regression Problem. As a Classification Problem, it is based upon a Multi-Class-classifictaion with several inbalanced classes. As a regression Problem it is easier to handle, as the labelcolumn is treated as integer and thus allowing to calculate inbetween states. In the literature both approachen are somites compared to each other. In my case, i used the AutoML approach to test both variants, but focusing on the Regression approach. Thus this is the approach i am going to focus on.
+
+Nevertheless, *Rings* is the label, which describes the amount of visible Rings on an Abalone and can be used to describe its age (the more rings, the older the Abalone is). And thus making it very usefull for a Regression approach!   
 
 ```python
 # TODO: Put your automl settings here
@@ -62,29 +83,25 @@ automl_config_reg = AutoMLConfig(compute_target=cluster,
                             **automl_settings_reg)
 ```
 
-I have used an experiment with a timeount after 40 minutes, a *normalized_mean_absolute_error* as primary metric as an MAE is more interpretable as a MSE. 
+I have configured a timeout after 40 minutes, to have some variance in the used Algorithm and thus allowing myself to know, if the runtime should be increased or lowered when i want to re-run the experiment. As a metric i have used the *normalized_mean_absolute_error* as primary metric as an MAE is more interpretable as a MSE. Thus the Errorrate tells us, how many years in mean an algorithm miscalculates the ture age. As i have set a Cluster with 5 nodes (i have used my private Azure account), i have defined the *max_concurrent_iterations* to be 4 and thus following the general rule of Nodes -1.  The *featurization* was set to *auto* to let the AutoML process decide by itself which features to include. Further information on this Process can be found [here](https://docs.microsoft.com/de-de/azure/machine-learning/how-to-configure-auto-features).  Lastly,  i have enabled the **early_stopping**, to reduce computational efforts and thus limiting my expences. 
 
 While running, you can inspect the details of your run on in the RunDetails cell. 
 
 ![RunDetails](images\RunWidget.png)
 
-Afterwards you can inspect the best Model. In my case it was a VotingClassifier based upon several Algorithm. Each Algorithm was weighted to adjust its impact on the VotingClassifier: 
+Afterwards you can inspect the best Model. In my case it was a VotingEnsemble based upon several Algorithm. Each Algorithm was weighted to adjust its impact on the VotingClassifier: 
 
-+ GradientBoosting * 0.067
-+ RandomForest * 0.4
-+ GradientBoosting * 0.2
++ RandomForest * 0.33
 + XGBoostRegressor * 0.067
++ GradientBoosting * 0.067
 + RandomForest * 0.067
-+ LightGBM * 0.067
-+ LassoLars * 0.134
-
-
++ LightGBM * 0.2
++ LassoLars * 0.133
++ ExtremeRandomTrees * 0.133
 
 ![Hyperauto](images/Best_Model_AutoML.png)
 
-The Best Model achieved an MAE of 1.48 and thus indicating, that in mean the Algorithm is miscalculating the age by 1.48 Years. 
-
-As the Dataset includes some *older* Abalones, the results may could be improved if those were treated as outliers and were excluded from the analysis. In generall increasing the runtime might lead to more Model-variants and thus can find better Results. Nevertheless the Results can be considerd as good.  
+The Best Model achieved an MAE of 1.49 and thus indicating, that in mean the Algorithm is miscalculating the age by 1.49 Years. 
 
 ## Hyperparameter Tuning
 
@@ -113,7 +130,9 @@ hyperdrive_run_config = HyperDriveConfig(estimator=estimator,
                                         max_concurrent_runs=4)
 ```
 
-My Hyperdrive approach used a RandomForest Regressor as  this is one often used regression Algorithm which leads to good results in regard to a decent runtime. I defined a set of Hyperparmeter, where i used a *RandomParameterSampling* on. Those Parameter were the Number of Estimators *n_estimators*, the *max_depth* of each Estimator, the amount of considered features *max_features* and the out of Bag score *oob_score*. 
+My Hyperdrive approach used a RandomForest Regressor as this is  an often used regression Algorithm which leads to good results in regard to a decent runtime. I defined a set of Hyperparmeter, where i used a *RandomParameterSampling* on. Those Parameter were the Number of Estimators *n_estimators*, the *max_depth* of each Estimator, the amount of considered features *max_features* and the out of Bag score *oob_score*. I have choosen those, because they are important parameters in a construction of a RandomForest.
+
+The **Number of Estimators** is one of the most important Parameters in a RandomForest as this one defines the amount of Trees, that should be grown and thus influencing the majority Vote, which leads to the Result. The **Depth of a Tree** defines how deep a tree should grow and when a tree should be pruned; this determines how many splits a tree can do and thus balancing over- and unterfitting. For Both Parameters i decided to define an range around the default-values,to get some variance in my HyperDrive approaches.  **Max Features** describes which features should be used to define the best split. Here i offered the RandomSampling to choose between all possivle Variants. The **OOB Score** defines wether or not an out-of-bag score should be defined, which can be used as a generalization. As i have set bootstrapping to default, which equals True, there might a chance, that some data might always be neglected, and thus testing if a correction (oob_score) improves the Result is a good Practice. 
 
 I used a *BanditPolicy* to early terminate Parameter combinations with bad performance. As a lower MAE describes a better Result, the goal was set to minimize this Metric. I have set HyperDrive to do 50 runs.
 
@@ -123,20 +142,25 @@ The complete process of initiating and calculating took about 50 minutes as the 
 
 In generall all Runs did achieve similar results, as the range of MAE-Values indicates in the following picture 
 
-![MAERange](images/AllRunsHyperdrive.png)
-
 ![BestHyper](images/BestRunHyperdrive.png)
 
 The Best MAE of 1.52 was achieved using the following Hyperparameters: 
 
-+ n_estimators: 313
-+ max_depth: 10
-+ max_features: auto
-+ oob_score: False 
++ n_estimators: 168
+
++ max_depth: 11
+
++ max_features: sqrt
+
++ oob_score: True
+
+  
 
 ## Model Deployment
 
-As the best Model was achieved using the AutoML variant, i deployed this one. The best run was retrieved, registered and deployed using code. 
+As the best Model was achieved using the AutoML variant, i deployed this one. The best run was retrieved, registered and deployed using code.  Some specific files are needed to perform a deployment, the *score.py* and the *conde_env.yml*. Both files can be extracted form the specific best run. The *score.py* defines an entry script, which loads the trained model and processes input data. Further information can be read [here](https://docs.microsoft.com/de-de/azure/machine-learning/how-to-deploy-model-designer). The *conda_env.yml* defines environmental specifics, such as packages and versions to load. You can read more about it, on the link above. 
+
+Both files are necessary to construct an *inference_config* file.  Further i used an ACI-Webservice (an Azure Container Instance) to deploy the Model into production. 
 
 ```python
 # Retrieve best Model
@@ -230,3 +254,11 @@ I have created three different datapoints, which are sent to Endpoint. For that 
  ![Requests](images/Requests.png)
 
 Sending those requests should let you get the response with the calculated ages of your Datapoints. 
+
+## Further Improvements 
+
+As the Dataset includes some *older* Abalones, the results may could be improved if those were treated as outliers and were excluded from the analysis. In generall increasing the runtime might lead to more Model-variants and thus can find better Results. Nevertheless the Results can be considerd as good.  
+
+Another improvement could be done, by adding external data to the dataset. The data was gathered in a certain region in 1994, so adding weather data for example might enhance the explanatory power of a model. 
+
+A further idea would be to take the Voting ensemble created by the AutoMl approach and to conduct a gridsearch on it, to try to tweak the model in its Hyperparameter a bit more. Nevertheless this might only lead to some micro improvements. 
