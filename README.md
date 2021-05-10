@@ -39,7 +39,7 @@ All Features are used. The Dataset is not enhanced with additional Data. The Sex
 
 I have uploaded the Data to my Workspace using the GUI of Azure ML Studio and named the Dataset *abalone*.
 
-![Dataset](images\Dataset.png)
+![Dataset](images/Dataset.png)
 
 Then it is consumeable in AzureSDK by using: 
 
@@ -87,7 +87,7 @@ I have configured a timeout after 40 minutes, to have some variance in the used 
 
 While running, you can inspect the details of your run on in the RunDetails cell. 
 
-![RunDetails](images\RunWidget.png)
+![RunDetails](images/RunWidget.png)
 
 Afterwards you can inspect the best Model. In my case it was a VotingEnsemble based upon several Algorithm. Each Algorithm was weighted to adjust its impact on the VotingClassifier: 
 
@@ -254,6 +254,7 @@ I have created three different datapoints, which are sent to Endpoint. For that 
  ![Requests](images/Requests.png)
 
 Sending those requests should let you get the response with the calculated ages of your Datapoints. 
+<<<<<<< HEAD
 
 ## Further Improvements 
 
@@ -262,3 +263,5 @@ As the Dataset includes some *older* Abalones, the results may could be improved
 Another improvement could be done, by adding external data to the dataset. The data was gathered in a certain region in 1994, so adding weather data for example might enhance the explanatory power of a model. 
 
 A further idea would be to take the Voting ensemble created by the AutoMl approach and to conduct a gridsearch on it, to try to tweak the model in its Hyperparameter a bit more. Nevertheless this might only lead to some micro improvements. 
+=======
+>>>>>>> 9ec7c879da904048f0f2e7d198da32383aef319d
